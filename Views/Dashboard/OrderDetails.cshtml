@@ -1,0 +1,45 @@
+@model ABC_Retail.Models.OrderViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Order Details";
+}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-action="Orders">Orders</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@Model.OrderId</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Order: @Model.OrderId</h5>
+        <span class="badge @(Model.Status == "Success" ? "bg-success" : (Model.Status == "Failed" ? "bg-danger" : "bg-warning"))">
+            @Model.Status
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Customer Name:</strong> @Model.CustomerName</p>
+                <p><strong>Order Date:</strong> @Model.OrderDate.ToString("f")</p>
+                <p><strong>Total Amount:</strong> @Model.Amount.ToString("C")</p>
+            </div>
+            <div class="col-md-6 border-start">
+                <h6>Internal Metadata</h6>
+                <ul class="list-unstyled">
+                    <li>PartitionKey: <code>RetailOrders</code></li>
+                    <li>RowKey: <code>@Model.OrderId</code></li>
+                    <li>Storage Table: <code>Orders</code></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a asp-action="Orders" class="btn btn-secondary">Back to List</a>
+    </div>
+</div>

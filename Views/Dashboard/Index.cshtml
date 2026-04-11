@@ -1,0 +1,92 @@
+@model ABC_Retail.Models.DashboardSummaryViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "System Overview";
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="kpi-card bg-primary-grad">
+            <p>Active Orders</p>
+            <h3>@Model.ActiveOrders</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card bg-success-grad">
+            <p>System Uptime</p>
+            <h3>@Model.SystemUptime%</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card bg-info-grad">
+            <p>Queue Depth</p>
+            <h3>@Model.QueueDepth</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card bg-warning-grad">
+            <p>Error Rate</p>
+            <h3>@Model.ErrorRate%</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>Recent Order Processing</span>
+                <a asp-action="Orders" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.RecentOrders)
+                        {
+                            <tr>
+                                <td>@order.OrderId</td>
+                                <td>@order.CustomerName</td>
+                                <td>
+                                    <span class="badge @(order.Status == "Success" ? "bg-success" : (order.Status == "Failed" ? "bg-danger" : "bg-warning"))">
+                                        @order.Status
+                                    </span>
+                                </td>
+                                <td>@order.Amount.ToString("C")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                System Alerts
+            </div>
+            <div class="card-body">
+                <ul class="alert-list">
+                    @foreach (var alert in Model.RecentAlerts)
+                    {
+                        <li class="alert-item @(alert.Severity == "Critical" ? "alert-critical" : (alert.Severity == "Warning" ? "alert-warning" : "alert-info"))">
+                            <div>
+                                <strong>@alert.Severity</strong>: @alert.Message
+                                <br />
+                                <small>@alert.Timestamp.ToString("HH:mm")</small>
+                            </div>
+                        </li>
+                    }
+                </ul>
+                <a asp-action="Alerts" class="btn btn-sm btn-block btn-light w-100">View All Alerts</a>
+            </div>
+        </div>
+    </div>
+</div>

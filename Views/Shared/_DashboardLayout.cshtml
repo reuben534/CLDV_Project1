@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ABC Retail Dashboard</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-box-open me-2"></i> ABC Retail
+        </div>
+        <a asp-controller="Dashboard" asp-action="Index" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+            <i class="fas fa-chart-line me-2"></i> Dashboard
+        </a>
+        <a asp-controller="Dashboard" asp-action="Customers" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Customers" ? "active" : "")">
+            <i class="fas fa-users me-2"></i> Customers
+        </a>
+        <a asp-controller="Dashboard" asp-action="Orders" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Orders" ? "active" : "")">
+            <i class="fas fa-shopping-cart me-2"></i> Orders
+        </a>
+        <a asp-controller="Dashboard" asp-action="Queue" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Queue" ? "active" : "")">
+            <i class="fas fa-tasks me-2"></i> Message Queue
+        </a>
+        <a asp-controller="Dashboard" asp-action="Analytics" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Analytics" ? "active" : "")">
+            <i class="fas fa-chart-pie me-2"></i> Analytics
+        </a>
+        <a asp-controller="Dashboard" asp-action="Storage" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Storage" ? "active" : "")">
+            <i class="fas fa-hdd me-2"></i> Storage
+        </a>
+        <a asp-controller="Dashboard" asp-action="Infrastructure" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Infrastructure" ? "active" : "")">
+            <i class="fas fa-server me-2"></i> Infrastructure
+        </a>
+        <a asp-controller="Dashboard" asp-action="Alerts" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Alerts" ? "active" : "")">
+            <i class="fas fa-exclamation-triangle me-2"></i> Alerts
+        </a>
+        <hr style="border-color: rgba(255,255,255,0.1);" />
+        <a asp-controller="Account" asp-action="Logout">
+            <i class="fas fa-sign-out-alt me-2"></i> Logout
+        </a>
+    </div>
+
+    <div class="main-content">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">@ViewData["Title"]</h2>
+                <div class="user-info">
+                    <span class="text-muted"><i class="fas fa-user-circle me-1"></i> Staff Member</span>
+                </div>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i> @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

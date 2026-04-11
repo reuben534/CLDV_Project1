@@ -1,0 +1,141 @@
+@model List<ABC_Retail.Models.AlertViewModel>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "System Alerts & Notifications";
+}
+
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 text-muted">Monitor System Events</h4>
+        <div class="d-flex align-items-center">
+            <span class="badge bg-soft-danger text-danger me-3 px-3">
+                <i class="fas fa-heartbeat me-1"></i> Live Monitoring
+            </span>
+            <button onclick="window.location.reload();" class="btn btn-sm btn-outline-secondary shadow-sm">
+                <i class="fas fa-sync-alt me-1"></i> Refresh Log
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="fas fa-history me-2 text-primary"></i>Active Alerts Log (Azure Tables)</h5>
+        <span class="badge bg-primary rounded-pill">@(Model?.Count ?? 0) Events</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light text-muted">
+                    <tr>
+                        <th class="ps-4">Severity</th>
+                        <th>Event Message</th>
+                        <th>Timestamp</th>
+                        <th>Status</th>
+                        <th class="pe-4 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var alert in Model.OrderByDescending(a => a.Timestamp))
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    @if (alert.Severity == "Critical")
+                                    {
+                                        <span class="badge bg-danger rounded-pill px-3">
+                                            <i class="fas fa-radiation me-1"></i> Critical
+                                        </span>
+                                    }
+                                    else if (alert.Severity == "Warning")
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill px-3">
+                                            <i class="fas fa-exclamation-triangle me-1"></i> Warning
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info rounded-pill px-3">
+                                            <i class="fas fa-info-circle me-1"></i> Info
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@alert.Message</div>
+                                    <small class="text-muted">ID: #@alert.Id</small>
+                                </td>
+                                <td>
+                                    <div class="small">@alert.Timestamp.ToLongDateString()</div>
+                                    <div class="fw-bold">@alert.Timestamp.ToLongTimeString()</div>
+                                </td>
+                                <td>
+                                    @if (alert.IsResolved)
+                                    {
+                                        <span class="text-success small fw-bold">
+                                            <i class="fas fa-check-double me-1"></i> Resolved
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-primary small fw-bold">
+                                            <i class="fas fa-clock me-1"></i> Pending
+                                        </span>
+                                    }
+                                </td>
+                                <td class="pe-4 text-end">
+                                    @if (!alert.IsResolved)
+                                    {
+                                        <form asp-action="ResolveAlert" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@alert.Id" />
+                                            <button type="submit" class="btn btn-sm btn-success shadow-sm px-3">
+                                                <i class="fas fa-check me-1"></i> Acknowledge
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-light disabled px-3">
+                                            <i class="fas fa-archive me-1"></i> Archived
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="py-5">
+                                    <i class="fas fa-shield-alt fa-3x text-light mb-3"></i>
+                                    <h6 class="text-muted">System Security Healthy</h6>
+                                    <p class="small text-muted mb-0">No active alerts or notifications in Azure Table Storage.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer bg-white py-3">
+        <div class="row align-items-center">
+            <div class="col-md-6 small text-muted">
+                <i class="fas fa-info-circle me-1"></i> Severity levels dictate the priority of the system response.
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="me-3 small text-muted">Legend:</span>
+                <span class="badge bg-danger rounded-circle p-1 me-1" title="Critical"> </span>
+                <span class="badge bg-warning rounded-circle p-1 me-1" title="Warning"> </span>
+                <span class="badge bg-info rounded-circle p-1 me-1" title="Info"> </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-soft-danger { background-color: rgba(220, 53, 69, 0.1); }
+    .table > :not(caption) > * > * { padding: 1.25rem 0.75rem; vertical-align: middle; }
+    .card { border-radius: 0.75rem; overflow: hidden; }
+</style>

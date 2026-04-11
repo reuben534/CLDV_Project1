@@ -1,0 +1,168 @@
+@model List<string>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Multimedia Storage";
+}
+
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 text-muted">Manage Storage Assets</h4>
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadAssetModal">
+            <i class="fas fa-cloud-upload-alt me-1"></i> Upload New Asset
+        </button>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="fas fa-hdd me-2 text-primary"></i>Stored Multimedia Assets</h5>
+        <span class="badge bg-primary rounded-pill">@(Model?.Count ?? 0) Blobs</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light text-muted">
+                    <tr>
+                        <th class="ps-4">Asset Preview</th>
+                        <th>File Name</th>
+                        <th>Resource Location</th>
+                        <th>Access Level</th>
+                        <th class="pe-4 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var blobUrl in Model)
+                        {
+                            var uri = new Uri(blobUrl);
+                            var fileName = System.IO.Path.GetFileName(uri.LocalPath);
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="asset-thumbnail rounded shadow-sm border overflow-hidden bg-white" style="width: 80px; height: 50px;">
+                                        <img src="@blobUrl" style="width: 100%; height: 100%; object-fit: cover;" alt="@fileName" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <h6 class="mb-0">@fileName</h6>
+                                    <small class="text-muted">Image Asset</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-soft-info text-info rounded-pill">
+                                        <i class="fas fa-box me-1"></i> product-images
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-success small"><i class="fas fa-key me-1"></i> SAS Protected</span>
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="@blobUrl" target="_blank" class="btn btn-sm btn-outline-primary" title="View Full Resource">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                        <form asp-action="DeleteBlob" method="post" class="d-inline">
+                                            <input type="hidden" name="blobName" value="@fileName" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(event, '@fileName')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="py-5">
+                                    <i class="fas fa-folder-open fa-3x text-light mb-3"></i>
+                                    <h6 class="text-muted">No storage assets found</h6>
+                                    <p class="small text-muted mb-0">Start by uploading images or files to Azure.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer bg-white text-muted small py-3">
+        <i class="fas fa-info-circle me-1"></i> Assets listed above are retrieved directly from the <code>product-images</code> Azure Blob container.
+    </div>
+</div>
+
+<!-- Upload Asset Modal -->
+<div class="modal fade" id="uploadAssetModal" tabindex="-1" aria-labelledby="uploadAssetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="uploadAssetModalLabel">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>Upload to Azure Storage
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs nav-fill" id="uploadTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active border-0 py-3" id="blob-tab" data-bs-toggle="tab" data-bs-target="#blob-panel" type="button" role="tab">
+                            <i class="fas fa-image me-1"></i> Product Image (Blob)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link border-0 py-3" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-panel" type="button" role="tab">
+                            <i class="fas fa-file-alt me-1"></i> System Log (File)
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content p-4">
+                    <div class="tab-pane fade show active" id="blob-panel" role="tabpanel">
+                        <form asp-action="UploadBlob" method="post" enctype="multipart/form-data">
+                            <div class="mb-4 text-center">
+                                <div class="p-4 border-2 border-dashed rounded-3 bg-light">
+                                    <i class="fas fa-images fa-3x text-muted mb-3 d-block"></i>
+                                    <label class="form-label fw-bold">Select Image File</label>
+                                    <input type="file" name="file" class="form-control" accept="image/*" required>
+                                    <div class="form-text mt-2">Target Container: <code>product-images</code></div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                                <i class="fas fa-upload me-1"></i> Start Blob Upload
+                            </button>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="file-panel" role="tabpanel">
+                        <form asp-action="UploadLog" method="post" enctype="multipart/form-data">
+                            <div class="mb-4 text-center">
+                                <div class="p-4 border-2 border-dashed rounded-3 bg-light">
+                                    <i class="fas fa-file-code fa-3x text-muted mb-3 d-block"></i>
+                                    <label class="form-label fw-bold">Select Log/Text File</label>
+                                    <input type="file" name="logFile" class="form-control" required>
+                                    <div class="form-text mt-2">Target Share: <code>retailshare/logs</code></div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-secondary w-100 shadow-sm">
+                                <i class="fas fa-file-upload me-1"></i> Start File Upload
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light p-3">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-soft-info { background-color: rgba(13, 202, 240, 0.1); }
+    .text-info { color: #0dcaf0 !important; }
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; }
+    .nav-tabs .nav-link { color: #6c757d; font-weight: 500; }
+    .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 2px solid #0d6efd !important; }
+    .table > :not(caption) > * > * { padding: 1.25rem 0.75rem; vertical-align: middle; }
+</style>

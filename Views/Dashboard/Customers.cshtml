@@ -1,0 +1,128 @@
+@model List<ABC_Retail.Models.CustomerProfile>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Customer Profiles";
+}
+
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 text-muted">Manage Customer Records</h4>
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+            <i class="fas fa-plus-circle me-1"></i> Add New Customer
+        </button>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0"><i class="fas fa-database me-2 text-primary"></i>Stored Customer Records</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Full Name</th>
+                        <th>Email Address</th>
+                        <th>Phone Number</th>
+                        <th>Partition Key</th>
+                        <th class="pe-4">Row Key (ID)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var customer in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                            @customer.FirstName[0]@customer.LastName[0]
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">@customer.FirstName @customer.LastName</h6>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@customer.Email</td>
+                                <td>@customer.PhoneNumber</td>
+                                <td><span class="badge bg-soft-info text-info">@customer.PartitionKey</span></td>
+                                <td class="pe-4">
+                                    <code>@customer.RowKey.Substring(0, 8)...</code>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="fas fa-user-friends fa-3x text-light mb-3"></i>
+                                <p class="text-muted">No customers found in Azure Table Storage.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addCustomerModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>Register New Customer
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="AddCustomer" method="post">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">First Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" name="FirstName" placeholder="e.g. John" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Last Name</label>
+                            <input type="text" class="form-control" name="LastName" placeholder="e.g. Doe" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" class="form-control" name="Email" placeholder="name@example.com" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Phone Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                <input type="text" class="form-control" name="PhoneNumber" placeholder="+27 81 234 5678">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-1"></i> Save to Azure
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-soft-info { background-color: rgba(13, 202, 240, 0.1); }
+    .text-info { color: #0dcaf0 !important; }
+    .avatar-sm { font-weight: 600; font-size: 0.8rem; }
+    .table > :not(caption) > * > * { padding: 1rem 0.5rem; }
+</style>

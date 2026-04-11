@@ -1,0 +1,130 @@
+@model ABC_Retail.Models.AnalyticsViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Analytics & Insights";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Order Volume Trends (Last 7 Days)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="orderChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Customer Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="regionChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>System Health Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="errorChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-lightbulb me-2 text-warning"></i>Key Performance Insights</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span><i class="fas fa-users me-2 text-muted"></i> Total Customers</span>
+                        <span class="badge bg-primary rounded-pill">@Model.TotalCustomers</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span><i class="fas fa-hand-holding-usd me-2 text-muted"></i> Total Revenue</span>
+                        <span class="fw-bold text-success">@Model.TotalRevenue.ToString("C")</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span><i class="fas fa-calculator me-2 text-muted"></i> Average Order Value</span>
+                        <span class="badge bg-info rounded-pill">@Model.AverageOrderValue.ToString("C")</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <span><i class="fas fa-map-marker-alt me-2 text-muted"></i> Most Active Region</span>
+                        <span class="badge bg-warning rounded-pill text-dark">@Model.MostActiveRegion</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Order Volume Chart (Real Data)
+        const ctxOrder = document.getElementById('orderChart').getContext('2d');
+        new Chart(ctxOrder, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.DailyOrders.Select(d => d.Day))),
+                datasets: [{
+                    label: 'Orders',
+                    data: @Html.Raw(Json.Serialize(Model.DailyOrders.Select(d => d.Count))),
+                    fill: true,
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    tension: 0.3,
+                    pointBackgroundColor: '#4e73df'
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+
+        // Region Chart (Based on Customer Distribution)
+        const ctxRegion = document.getElementById('regionChart').getContext('2d');
+        new Chart(ctxRegion, {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.RegionData.Select(r => r.Region))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(Model.RegionData.Select(r => r.Count))),
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'],
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        // Error Chart (Real Severity Distribution)
+        const ctxError = document.getElementById('errorChart').getContext('2d');
+        new Chart(ctxError, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.ErrorData.Select(e => e.Category))),
+                datasets: [{
+                    label: 'System Events',
+                    data: @Html.Raw(Json.Serialize(Model.ErrorData.Select(e => e.Count))),
+                    backgroundColor: ['#e74a3b', '#f6c23e', '#4e73df']
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    </script>
+}

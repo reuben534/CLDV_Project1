@@ -1,0 +1,173 @@
+@model ABC_Retail.Models.InfrastructureViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Infrastructure Monitoring";
+}
+
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 text-muted">System Health Overview</h4>
+        <div>
+            <span class="badge bg-soft-success text-success me-3">
+                <i class="fas fa-circle me-1 small"></i> Live Telemetry Active
+            </span>
+            <small class="text-muted">Last updated: @Model.LastUpdated</small>
+            <button onclick="window.location.reload();" class="btn btn-sm btn-outline-primary ms-3 shadow-sm">
+                <i class="fas fa-sync-alt me-1"></i> Refresh Metrics
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-microchip me-2 text-primary"></i>CPU Utilization (%)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="cpuChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-memory me-2 text-success"></i>Memory Load (%)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="memoryChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-network-wired me-2 text-warning"></i>Network Traffic (Mbps)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="networkChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0"><i class="fas fa-server me-2 text-primary"></i>Azure Compute Instances</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="bg-light text-muted">
+                            <tr>
+                                <th class="ps-4">Instance ID</th>
+                                <th>Azure Region</th>
+                                <th>Private IP</th>
+                                <th>Health Status</th>
+                                <th class="pe-4">Uptime</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var instance in Model.Instances)
+                            {
+                                <tr>
+                                    <td class="ps-4"><code>@instance.InstanceId</code></td>
+                                    <td>@instance.Region</td>
+                                    <td><span class="text-muted">@instance.IpAddress</span></td>
+                                    <td>
+                                        @if (instance.Status == "Running")
+                                        {
+                                            <span class="badge bg-soft-success text-success px-3">
+                                                <i class="fas fa-check-circle me-1"></i> Running
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-soft-warning text-warning px-3">
+                                                <i class="fas fa-exclamation-triangle me-1"></i> @instance.Status
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="pe-4">@instance.Uptime</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { display: false } },
+                x: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        };
+
+        const labels = ['', '', '', '', '', '', '', '', '', ''];
+
+        // CPU Chart (Dynamic Data)
+        new Chart(document.getElementById('cpuChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ 
+                    data: @Html.Raw(Json.Serialize(Model.CpuUsagePoints)), 
+                    borderColor: '#0d6efd', 
+                    backgroundColor: 'rgba(13,110,253,0.05)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Memory Chart (Dynamic Data)
+        new Chart(document.getElementById('memoryChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{ 
+                    data: @Html.Raw(Json.Serialize(Model.MemoryUsagePoints)), 
+                    backgroundColor: '#198754',
+                    borderRadius: 4
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Network Chart (Dynamic Data)
+        new Chart(document.getElementById('networkChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ 
+                    data: @Html.Raw(Json.Serialize(Model.NetworkThroughputPoints)), 
+                    borderColor: '#ffc107', 
+                    backgroundColor: 'rgba(255,193,7,0.05)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: { ...chartOptions, scales: { y: { beginAtZero: true, max: 1000, grid: { display: false } }, x: { grid: { display: false } } } }
+        });
+    </script>
+}
+
+<style>
+    .bg-soft-success { background-color: rgba(25, 135, 84, 0.1); }
+    .bg-soft-warning { background-color: rgba(255, 193, 7, 0.1); }
+    .table > :not(caption) > * > * { padding: 1.25rem 0.75rem; vertical-align: middle; }
+</style>
