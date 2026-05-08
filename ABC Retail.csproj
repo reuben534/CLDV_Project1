@@ -13,6 +13,14 @@
     <PackageReference Include="Azure.Storage.Files.Shares" Version="12.25.0" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.25.0" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.11.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ABC_Retail_Functions\**" />
+    <Content Remove="ABC_Retail_Functions\**" />
+    <EmbeddedResource Remove="ABC_Retail_Functions\**" />
+    <None Remove="ABC_Retail_Functions\**" />
   </ItemGroup>
 
 </Project>

@@ -50,7 +50,10 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0">@ViewData["Title"]</h2>
                 <div class="user-info">
-                    <span class="text-muted"><i class="fas fa-user-circle me-1"></i> Staff Member</span>
+                    <span class="text-muted">
+                        <i class="fas fa-user-circle me-1"></i> 
+                        @(Context.Session.GetString("UserName") ?? "Staff Member")
+                    </span>
                 </div>
             </div>
 

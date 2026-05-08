@@ -10,28 +10,45 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System;
 using ABC_Retail.Models;
+using Newtonsoft.Json;
+using System.Net.Http;
+using System.Text;
 
 namespace ABC_Retail.Services
 {
     public class AzureStorageService
     {
         private readonly string _connectionString;
+        private static readonly HttpClient _httpClient = new HttpClient();
+        private readonly string _functionsUrl;
 
         public AzureStorageService(IConfiguration configuration)
         {
             _connectionString = configuration.GetSection("AzureStorage")["ConnectionString"] ?? "";
+            _functionsUrl = configuration.GetSection("AzureStorage")["FunctionsUrl"] ?? "";
         }
 
         // --- BLOB STORAGE ---
         public async Task UploadBlobAsync(string containerName, string blobName, System.IO.Stream content)
         {
-            if (string.IsNullOrEmpty(_connectionString)) throw new Exception("Connection String missing.");
-            
-            var serviceClient = new BlobServiceClient(_connectionString);
-            var containerClient = serviceClient.GetBlobContainerClient(containerName);
-            await containerClient.CreateIfNotExistsAsync();
-            var blobClient = containerClient.GetBlobClient(blobName);
-            await blobClient.UploadAsync(content, overwrite: true);
+            using (var ms = new System.IO.MemoryStream())
+            {
+                await content.CopyToAsync(ms);
+                var fileBase64 = Convert.ToBase64String(ms.ToArray());
+
+                var payload = new
+                {
+                    ContainerName = containerName,
+                    BlobName = blobName,
+                    FileBase64 = fileBase64
+                };
+
+                var json = JsonConvert.SerializeObject(payload);
+                var contentStr = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"{_functionsUrl}UploadBlob", contentStr);
+                response.EnsureSuccessStatusCode();
+            }
         }
 
         public async Task DeleteBlobAsync(string containerName, string blobName)
@@ -83,35 +100,43 @@ namespace ABC_Retail.Services
         // --- TABLE STORAGE ---
         public async Task AddTableEntityAsync(string tableName, CustomerProfile customer)
         {
-            var serviceClient = new TableServiceClient(_connectionString);
-            var tableClient = serviceClient.GetTableClient(tableName);
-            await tableClient.CreateIfNotExistsAsync();
-            
-            var entity = new TableEntity(customer.PartitionKey, customer.RowKey)
+            var payload = new
             {
-                { "FirstName", customer.FirstName },
-                { "LastName", customer.LastName },
-                { "Email", customer.Email },
-                { "PhoneNumber", customer.PhoneNumber }
+                TableName = tableName,
+                PartitionKey = customer.PartitionKey,
+                RowKey = customer.RowKey,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                Email = customer.Email,
+                PhoneNumber = customer.PhoneNumber
             };
-            await tableClient.AddEntityAsync(entity);
+
+            var json = JsonConvert.SerializeObject(payload);
+            var contentStr = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"{_functionsUrl}StoreTableInfo", contentStr);
+            response.EnsureSuccessStatusCode();
         }
 
         // --- TABLE STORAGE: ORDERS ---
         public async Task AddOrderAsync(OrderViewModel order)
         {
-            var serviceClient = new TableServiceClient(_connectionString);
-            var tableClient = serviceClient.GetTableClient("Orders");
-            await tableClient.CreateIfNotExistsAsync();
-
-            var entity = new TableEntity("RetailOrders", order.OrderId)
+            var payload = new
             {
-                { "OrderDate", order.OrderDate },
-                { "CustomerName", order.CustomerName },
-                { "Amount", (double)order.Amount },
-                { "Status", order.Status }
+                TableName = "Orders",
+                PartitionKey = "RetailOrders",
+                RowKey = order.OrderId,
+                OrderDate = order.OrderDate,
+                CustomerName = order.CustomerName,
+                Amount = (double)order.Amount,
+                Status = order.Status
             };
-            await tableClient.AddEntityAsync(entity);
+
+            var json = JsonConvert.SerializeObject(payload);
+            var contentStr = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"{_functionsUrl}StoreTableInfo", contentStr);
+            response.EnsureSuccessStatusCode();
         }
 
         public async Task<List<OrderViewModel>> GetOrdersAsync()
@@ -255,24 +280,36 @@ namespace ABC_Retail.Services
 
         public async Task AddAdminUserAsync(AdminUser user)
         {
-            var serviceClient = new TableServiceClient(_connectionString);
-            var tableClient = serviceClient.GetTableClient("AdminUsers");
-            await tableClient.CreateIfNotExistsAsync();
-
-            var entity = new TableEntity(user.PartitionKey, user.RowKey)
+            var payload = new
             {
-                { "PasswordHash", user.PasswordHash },
-                { "FullName", user.FullName }
+                TableName = "AdminUsers",
+                PartitionKey = user.PartitionKey,
+                RowKey = user.RowKey,
+                PasswordHash = user.PasswordHash,
+                FullName = user.FullName
             };
-            await tableClient.UpsertEntityAsync(entity);
+
+            var json = JsonConvert.SerializeObject(payload);
+            var contentStr = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"{_functionsUrl}StoreTableInfo", contentStr);
+            response.EnsureSuccessStatusCode();
         }
 
         // --- QUEUE STORAGE ---
         public async Task SendQueueMessageAsync(string queueName, string message)
         {
-            var queueClient = new QueueClient(_connectionString, queueName);
-            await queueClient.CreateIfNotExistsAsync();
-            await queueClient.SendMessageAsync(message);
+            var payload = new
+            {
+                QueueName = queueName,
+                Message = message
+            };
+
+            var json = JsonConvert.SerializeObject(payload);
+            var contentStr = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"{_functionsUrl}SendMessageToQueue", contentStr);
+            response.EnsureSuccessStatusCode();
         }
 
         public async Task<int> GetQueueDepthAsync(string queueName)
@@ -320,13 +357,25 @@ namespace ABC_Retail.Services
         // --- FILE STORAGE (SHARES) ---
         public async Task UploadFileAsync(string shareName, string directoryName, string fileName, System.IO.Stream content)
         {
-            var shareClient = new ShareClient(_connectionString, shareName);
-            await shareClient.CreateIfNotExistsAsync();
-            var directoryClient = shareClient.GetDirectoryClient(directoryName);
-            await directoryClient.CreateIfNotExistsAsync();
-            var fileClient = directoryClient.GetFileClient(fileName);
-            await fileClient.CreateAsync(content.Length);
-            await fileClient.UploadRangeAsync(new Azure.HttpRange(0, content.Length), content);
+            using (var ms = new System.IO.MemoryStream())
+            {
+                await content.CopyToAsync(ms);
+                var fileBase64 = Convert.ToBase64String(ms.ToArray());
+
+                var payload = new
+                {
+                    ShareName = shareName,
+                    DirectoryName = directoryName,
+                    FileName = fileName,
+                    FileBase64 = fileBase64
+                };
+
+                var json = JsonConvert.SerializeObject(payload);
+                var contentStr = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"{_functionsUrl}UploadFile", contentStr);
+                response.EnsureSuccessStatusCode();
+            }
         }
     }
 }

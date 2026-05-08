@@ -8,12 +8,18 @@ System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 builder.Services.AddSingleton<ABC_Retail.Services.AzureStorageService>();
 builder.Services.AddAzureClients(clientBuilder =>
 {
-    clientBuilder.AddBlobServiceClient(builder.Configuration["AzureStorage:ConnectionString1:blobServiceUri"]!).WithName("AzureStorage:ConnectionString1");
-    clientBuilder.AddQueueServiceClient(builder.Configuration["AzureStorage:ConnectionString1:queueServiceUri"]!).WithName("AzureStorage:ConnectionString1");
-    clientBuilder.AddTableServiceClient(builder.Configuration["AzureStorage:ConnectionString1:tableServiceUri"]!).WithName("AzureStorage:ConnectionString1");
+    clientBuilder.AddBlobServiceClient(builder.Configuration["AzureStorage:ConnectionString"]);
+    clientBuilder.AddQueueServiceClient(builder.Configuration["AzureStorage:ConnectionString"]);
+    clientBuilder.AddTableServiceClient(builder.Configuration["AzureStorage:ConnectionString"]);
 });
 
 var app = builder.Build();
@@ -26,6 +32,8 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthorization();
 

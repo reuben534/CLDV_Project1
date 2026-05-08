@@ -48,6 +48,7 @@ namespace ABC_Retail.Controllers
                 var result = _passwordHasher.VerifyHashedPassword(username, user.PasswordHash, password);
                 if (result == PasswordVerificationResult.Success)
                 {
+                    HttpContext.Session.SetString("UserName", user.FullName ?? username);
                     return RedirectToAction("Index", "Dashboard");
                 }
             }
@@ -58,6 +59,7 @@ namespace ABC_Retail.Controllers
 
         public IActionResult Logout()
         {
+            HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
     }
